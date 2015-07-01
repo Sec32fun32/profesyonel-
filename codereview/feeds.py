@@ -137,6 +137,21 @@ class AllFeed(BaseFeed):
     return query.fetch(RSS_LIMIT)
 
 
+class NewFeed(BaseFeed):
+  title = 'Code Review - New issues'
+  title_template = 'feeds/new_title.html'
+  description_template = 'feeds/new_description.html'
+
+  def items(self):
+    query = models.Issue.query(
+        models.Issue.closed == False, models.Issue.private == False).order(
+        -models.Issue.created)
+    return query.fetch(RSS_LIMIT)
+
+  def item_pubdate(self, item):
+    return item.created
+
+
 class OneIssueFeed(BaseFeed):
   title_template = 'feeds/issue_title.html'
   description_template = 'feeds/issue_description.html'

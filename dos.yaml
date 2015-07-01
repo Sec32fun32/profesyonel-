@@ -1,0 +1,3 @@
+blacklist:
+- subnet: 118.192.48.245
+  description: Looks like a crawler

@@ -182,6 +182,13 @@ indexes:
   properties:
   - name: closed
   - name: private
+  - name: created
+    direction: desc
+
+- kind: Issue
+  properties:
+  - name: closed
+  - name: private
   - name: modified
     direction: desc
 

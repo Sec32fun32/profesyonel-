@@ -170,7 +170,7 @@ var publish_link = "{%url codereview.views.publish issue.key.id%}";
 {%if is_dev%}
 <div style="float:left; color:green; font-weight:bold">DEVELOPMENT SERVER</div>
 {%else%}
-<div style="float:left; font-weight:bold"><i>Rietveld</i> Code Review Tool</div>
+<div style="float:left; font-weight:bold"><i>Tryton</i> Code Review Tool</div>
 {%endif%}
 {%if special_banner%}
 <div style="float:left;
@@ -183,7 +183,16 @@ var publish_link = "{%url codereview.views.publish issue.key.id%}";
 {%endif%}
 
 {%if user%}
-<b>{{user.email}} ({%nickname user True%})</b>
+<b>
+    {% if account and account.name %}
+    {{account.name}}
+    {%else%}
+    <a class="novisit" href="{%url codereview.views.settings%}" style="color:red">
+        Please enter your name
+    </a>
+    {%endif%}
+    &lt;{{user.email}}&gt; ({%nickname user True%})
+</b>
 |
 {%if must_choose_nickname%}
 <span style="color:red">Please choose your nickname with</span>{%endif%}
@@ -217,7 +226,6 @@ var publish_link = "{%url codereview.views.publish issue.key.id%}";
 <div class="mainmenu">
   {%block mainmenu%}
   <a href="{%url codereview.views.index %}">Issues</a>
-  <a href="{%url codereview.views.repos %}">Repositories</a>
   <a href="{%url codereview.views.search%}">Search</a>
   {%endblock%}
 </div>
@@ -257,20 +265,6 @@ var publish_link = "{%url codereview.views.publish issue.key.id%}";
   </div>
   <div style="margin-top: .3em;">This is Rietveld <a href='https://github.com/rietveld-codereview/rietveld'>{{rietveld_revision}}</a></div>
 </div>
-
-{%if not is_dev%}
-<script type="text/javascript">
-  var _gaq = _gaq || [];
-  _gaq.push(['_setAccount', 'UA-4803694-4']);
-  _gaq.push(['_trackPageview']);
-
-  (function() {
-    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-  })();
-</script>
-{%endif%}
 
 </body>
 </html>

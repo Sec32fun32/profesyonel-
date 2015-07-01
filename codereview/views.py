@@ -341,6 +341,7 @@ FORM_CONTEXT_VALUES.append(('', 'Whole file'))
 class SettingsForm(forms.Form):
 
   nickname = forms.CharField(max_length=30)
+  name = forms.CharField()
   context = forms.IntegerField(
       widget=forms.Select(choices=FORM_CONTEXT_VALUES),
       required=False,
@@ -1719,7 +1720,25 @@ def download(request):
   if user_agent and 'MSIE' in user_agent:
     # Add 256+ bytes of padding to prevent XSS attacks on Internet Explorer.
     padding = ('='*67 + '\n') * 4
-  return HttpTextResponse(padding + request.patchset.data)
+  header = '# HG changeset patch\n'
+  issue = request.patchset.issue_key.get()
+  account = models.Account.get_account_for_user(issue.owner)
+  if account and account.name:
+    name = account.name
+  else:
+    name = ''
+  header += '# User %s <%s>\n' % (name, issue.owner.email())
+  if ':' in issue.subject:
+    _, subject = issue.subject.split(':', 1)
+  else:
+    subject = issue.subject
+  header += subject.strip() + '\n'
+  header += '\n'
+  if issue.subject != issue.description:
+    header += issue.description + '\n'
+  header += 'review%s\n' % issue.key.id()
+  header += '\n'
+  return HttpTextResponse(padding + header.encode('utf-8') + request.patchset.data)
 
 
 @deco.patchset_required
@@ -2992,7 +3011,9 @@ def _make_message(request, issue, message, comments=None, send_mail=False,
     body = django.template.loader.render_to_string(
       template, context, context_instance=RequestContext(request))
     logging.warn('Mail: to=%s; cc=%s', ', '.join(to), ', '.join(cc))
-    send_args = {'sender': my_email,
+    my_name = (models.Account.current_user_account.name
+        or models.Account.current_user_account.nickname)
+    send_args = {'sender': '%s <%s>' % (my_name, my_email),
                  'to': [_encode_safely(address) for address in to],
                  'subject': _encode_safely(subject),
                  'body': _encode_safely(body),
@@ -3013,7 +3034,8 @@ def _make_message(request, issue, message, comments=None, send_mail=False,
           previous_sender = send_args['sender']
           if previous_sender not in send_args['to']:
             send_args['to'].append(previous_sender)
-          send_args['sender'] = django_settings.RIETVELD_INCOMING_MAIL_ADDRESS
+          send_args['sender'] = '%s <%s>' % (
+            my_name, django_settings.RIETVELD_INCOMING_MAIL_ADDRESS)
         else:
           raise
       except apiproxy_errors.DeadlineExceededError:
@@ -3438,6 +3460,7 @@ def settings(request):
     default_context = account.default_context
     default_column_width = account.default_column_width
     form = SettingsForm(initial={'nickname': nickname,
+                                 'name': account.name,
                                  'context': default_context,
                                  'column_width': default_column_width,
                                  'notify_by_email': account.notify_by_email,
@@ -3446,6 +3469,7 @@ def settings(request):
   form = SettingsForm(request.POST)
   if form.is_valid():
     account.nickname = form.cleaned_data.get('nickname')
+    account.name = form.cleaned_data.get('name')
     account.default_context = form.cleaned_data.get('context')
     account.default_column_width = form.cleaned_data.get('column_width')
     account.notify_by_email = form.cleaned_data.get('notify_by_email')

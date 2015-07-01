@@ -116,4 +116,5 @@ urlpatterns += patterns(
     url(r'^rss/reviews/(.*)$', feeds.ReviewsFeed(), name='rss_reviews'),
     url(r'^rss/closd/(.*)$', feeds.ClosedFeed(), name='rss_closed'),
     url(r'^rss/issue/(.*)$', feeds.OneIssueFeed(), name='rss_issue'),
+    url(r'^rss/new$', feeds.NewFeed(), name='rss_new'),
 )

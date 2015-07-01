@@ -1001,6 +1001,7 @@ class Account(ndb.Model):
                                         required=True)
   email = ndb.StringProperty(required=True)  # key == <email>
   nickname = ndb.StringProperty(required=True)
+  name = ndb.StringProperty()
   default_context = ndb.IntegerProperty(default=settings.DEFAULT_CONTEXT,
                                         choices=CONTEXT_CHOICES)
   default_column_width = ndb.IntegerProperty(

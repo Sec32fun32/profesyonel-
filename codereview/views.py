@@ -169,7 +169,7 @@ class IssueBaseForm(forms.Form):
                        max_length=MAX_CC,
                        label = 'CC',
                        widget=AccountInput(attrs={'size': 60}))
-  private = forms.BooleanField(required=False, initial=False)
+  private = forms.BooleanField(required=False, initial=True)
 
   def get_base(self):
     base = self.cleaned_data.get('base')
@@ -196,7 +196,7 @@ class UploadForm(forms.Form):
   issue = forms.IntegerField(required=False)
   reviewers = forms.CharField(max_length=MAX_REVIEWERS, required=False)
   cc = forms.CharField(max_length=MAX_CC, required=False)
-  private = forms.BooleanField(required=False, initial=False)
+  private = forms.BooleanField(required=False, initial=True)
   send_mail = forms.BooleanField(required=False)
   base_hashes = forms.CharField(required=False)
   repo_guid = forms.CharField(required=False, max_length=MAX_URL)
@@ -253,7 +253,7 @@ class EditLocalBaseForm(forms.Form):
                        label = 'CC',
                        widget=AccountInput(attrs={'size': 60}))
   private = forms.BooleanField(
-    required=False, initial=False, label='Protected',
+    required=False, initial=True, label='Protected',
     help_text=(
       'Only viewable by @chromium and @google accounts.'
       '<div class="if_checked">'
@@ -352,6 +352,9 @@ class SettingsForm(forms.Form):
   notify_by_email = forms.BooleanField(required=False,
                                        widget=forms.HiddenInput())
 
+  validated = forms.BooleanField(required=False)
+
+
   def clean_nickname(self):
     nickname = self.cleaned_data.get('nickname')
     # Check for allowed characters
@@ -368,6 +371,9 @@ class SettingsForm(forms.Form):
 
     if nickname.lower() == 'me':
       raise forms.ValidationError('Choose a different nickname.')
+
+    if getattr(self, 'skip_nickname_uniq', False):
+      return nickname
 
     # Look for existing nicknames
     query = models.Account.query(
@@ -981,6 +987,7 @@ def use_uploadpy(request):
 
 
 @deco.require_methods('POST')
+@deco.account_validated
 @deco.upload_required
 def upload(request):
   """/upload - Used by upload.py to create a new Issue and add PatchSet's to
@@ -1105,6 +1112,7 @@ def _update_patch(patch_key, content_key, is_current, status, is_binary):
 
 
 @deco.require_methods('POST')
+@deco.account_validated
 @deco.patch_required
 @deco.upload_required
 def upload_content(request):
@@ -1165,6 +1173,7 @@ def upload_content(request):
 
 
 @deco.require_methods('POST')
+@deco.account_validated
 @deco.patchset_required
 @deco.upload_required
 def upload_patch(request):
@@ -1201,6 +1210,7 @@ def upload_patch(request):
 
 
 @deco.require_methods('POST')
+@deco.account_validated
 @deco.issue_editor_required
 @deco.upload_required
 def upload_complete(request, patchset_id=None):
@@ -1292,7 +1302,7 @@ def _make_new(request, form):
                        repo_guid=form.cleaned_data.get('repo_guid', None),
                        reviewers=reviewers,
                        cc=cc,
-                       private=form.cleaned_data.get('private', False),
+                       private=form.cleaned_data.get('private', True),
                        n_comments=0,
                        key=issue_key)
   issue.put()
@@ -1473,6 +1483,7 @@ def _get_emails_from_raw(raw_emails, form=None, label=None):
   return emails
 
 
+@deco.account_validated
 @deco.issue_required
 def show(request):
   """/<issue> - Show an issue."""
@@ -1502,6 +1513,7 @@ def show(request):
   })
 
 
+@deco.account_validated
 @deco.patchset_required
 def patchset(request):
   """/patchset/<key> - Returns patchset information."""
@@ -1518,6 +1530,7 @@ def patchset(request):
                   })
 
 
+@deco.account_validated
 @deco.login_required
 def account(request):
   """/account/?q=blah&limit=10&timestamp=blah - Used for autocomplete."""
@@ -1558,6 +1571,7 @@ def account(request):
   return HttpTextResponse(response)
 
 
+@deco.account_validated
 @deco.issue_editor_required
 @deco.xsrf_required
 def edit(request):
@@ -1602,7 +1616,7 @@ def edit(request):
   issue.subject = cleaned_data['subject']
   issue.description = cleaned_data['description']
   issue.closed = cleaned_data['closed']
-  issue.private = cleaned_data.get('private', False)
+  issue.private = cleaned_data.get('private', True)
   base_changed = (issue.base != base)
   issue.base = base
   issue.reviewers = reviewers
@@ -1646,6 +1660,7 @@ def _delete_cached_contents(patch_list):
 
 
 @deco.require_methods('POST')
+@deco.account_validated
 @deco.issue_editor_required
 @deco.xsrf_required
 def delete(request):
@@ -1660,6 +1675,7 @@ def delete(request):
 
 
 @deco.require_methods('POST')
+@deco.account_validated
 @deco.patchset_editor_required
 @deco.xsrf_required
 def delete_patchset(request):
@@ -1672,6 +1688,7 @@ def delete_patchset(request):
 
 
 @deco.require_methods('POST')
+@deco.account_validated
 @deco.issue_editor_required
 @deco.xsrf_required
 def close(request):
@@ -1687,6 +1704,7 @@ def close(request):
 
 
 @deco.require_methods('POST')
+@deco.account_validated
 @deco.issue_required
 @deco.upload_required
 def mailissue(request):
@@ -1706,6 +1724,7 @@ def mailissue(request):
   return HttpTextResponse('OK')
 
 
+@deco.account_validated
 @deco.access_control_allow_origin_star
 @deco.patchset_required
 def download(request):
@@ -1722,6 +1741,7 @@ def download(request):
   return HttpTextResponse(padding + request.patchset.data)
 
 
+@deco.account_validated
 @deco.patchset_required
 def tarball(request):
   """/tarball/<issue>/<patchset>/[lr] - Returns a .tar.bz2 file
@@ -1779,6 +1799,7 @@ def tarball(request):
   return response
 
 
+@deco.account_validated
 @deco.issue_required
 @deco.upload_required
 def description(request):
@@ -1798,6 +1819,7 @@ def description(request):
   return HttpTextResponse('')
 
 
+@deco.account_validated
 @deco.issue_required
 @deco.upload_required
 @deco.json_response
@@ -1835,6 +1857,7 @@ def fields(request):
   return HttpTextResponse('')
 
 
+@deco.account_validated
 @deco.patch_required
 def patch(request):
   """/<issue>/patch/<patchset>/<patch> - View a raw patch."""
@@ -1873,6 +1896,7 @@ def patch_helper(request, nav_type='patch'):
                   })
 
 
+@deco.account_validated
 @deco.access_control_allow_origin_star
 @deco.image_required
 def image(request):
@@ -1885,6 +1909,7 @@ def image(request):
   return response
 
 
+@deco.account_validated
 @deco.access_control_allow_origin_star
 @deco.patch_required
 def download_patch(request):
@@ -1978,6 +2003,7 @@ def _patchset_as_dict(patchset, comments, request):
   return values
 
 
+@deco.account_validated
 @deco.access_control_allow_origin_star
 @deco.issue_required
 @deco.json_response
@@ -1988,6 +2014,7 @@ def api_issue(request):
   return values
 
 
+@deco.account_validated
 @deco.access_control_allow_origin_star
 @deco.patchset_required
 @deco.json_response
@@ -2035,6 +2062,7 @@ def _get_column_width_for_user(request):
   return column_width
 
 
+@deco.account_validated
 @deco.patch_filename_required
 def diff(request):
   """/<issue>/diff/<patchset>/<patch> - View a patch as a side-by-side diff"""
@@ -2106,6 +2134,7 @@ def _get_diff_table_rows(request, patch, context, column_width):
   return rows
 
 
+@deco.account_validated
 @deco.patch_required
 @deco.json_response
 def diff_skipped_lines(request, id_before, id_after, where, column_width):
@@ -2250,6 +2279,7 @@ def _get_diff2_data(request, ps_left_id, ps_right_id, patch_id, context,
               ps_left=ps_left, ps_right=ps_right, rows=rows)
 
 
+@deco.account_validated
 @deco.issue_required
 def diff2(request, ps_left_id, ps_right_id, patch_filename):
   """/<issue>/diff2/... - View the delta between two different patch sets."""
@@ -2298,6 +2328,7 @@ def diff2(request, ps_left_id, ps_right_id, patch_filename):
                   })
 
 
+@deco.account_validated
 @deco.issue_required
 @deco.json_response
 def diff2_skipped_lines(request, ps_left_id, ps_right_id, patch_id,
@@ -2464,6 +2495,7 @@ def _add_or_update_comment(user, issue, patch, lineno, left, text, message_id):
 
 
 @deco.login_required
+@deco.account_validated
 @deco.patchset_required
 @deco.require_methods('POST')
 @deco.json_response
@@ -2639,6 +2671,7 @@ def _get_mail_template(request, issue, full_diff=False):
 
 
 @deco.login_required
+@deco.account_validated
 @deco.issue_required
 @deco.xsrf_required
 def publish(request):
@@ -2748,6 +2781,7 @@ def publish(request):
 
 
 @deco.login_required
+@deco.account_validated
 @deco.issue_required
 @deco.xsrf_required
 def delete_drafts(request):
@@ -3032,6 +3066,7 @@ def _make_message(request, issue, message, comments=None, send_mail=False,
 
 @deco.require_methods('POST')
 @deco.login_required
+@deco.account_validated
 @deco.xsrf_required
 @deco.issue_required
 def star(request):
@@ -3049,6 +3084,7 @@ def star(request):
 
 @deco.require_methods('POST')
 @deco.login_required
+@deco.account_validated
 @deco.issue_required
 @deco.xsrf_required
 def unstar(request):
@@ -3065,6 +3101,7 @@ def unstar(request):
 
 
 @deco.login_required
+@deco.account_validated
 @deco.issue_required
 def draft_message(request):
   """/<issue>/draft_message - Retrieve, modify and delete draft messages.
@@ -3102,6 +3139,7 @@ def _get_draft_message(draft):
   return HttpTextResponse(draft.text if draft else '')
 
 
+@deco.account_validated
 def _post_draft_message(request, draft):
   """Handles POST requests to /<issue>/draft_message.
 
@@ -3133,6 +3171,7 @@ def _delete_draft_message(draft):
   return HttpTextResponse('OK')
 
 
+@deco.account_validated
 @deco.json_response
 def search(request):
   """/search - Search for issues or patchset.
@@ -3283,6 +3322,7 @@ def repos(request):
 
 
 @deco.login_required
+@deco.account_validated
 @deco.xsrf_required
 def repo_new(request):
   """/repo_new - Create a new Subversion repository record."""
@@ -3347,6 +3387,7 @@ def repo_init(_request):
 
 
 @deco.login_required
+@deco.account_validated
 @deco.xsrf_required
 def branch_new(request, repo_id):
   """/branch_new/<repo> - Add a new Branch to a Repository record."""
@@ -3376,6 +3417,7 @@ def branch_new(request, repo_id):
 
 
 @deco.login_required
+@deco.account_validated
 @deco.xsrf_required
 def branch_edit(request, branch_id):
   """/branch_edit/<branch> - Edit a Branch record."""
@@ -3408,6 +3450,7 @@ def branch_edit(request, branch_id):
 
 @deco.require_methods('POST')
 @deco.login_required
+@deco.account_validated
 @deco.xsrf_required
 def branch_delete(request, branch_id):
   """/branch_delete/<branch> - Delete a Branch record."""
@@ -3431,8 +3474,18 @@ def branch_delete(request, branch_id):
 
 @deco.login_required
 @deco.xsrf_required
-def settings(request):
+def settings(request, user_key=''):
   account = models.Account.current_user_account
+  if request.user_is_admin and user_key:
+    if '@' in user_key:
+      user = users.User(user_key)
+      account = models.Account.get_account_for_user(user)
+    elif user_key:
+      account = models.Account.get_account_for_nickname(user_key)
+    if not account:
+      logging.info("account not found for user %s" % user_key)
+      return HttpResponseNotFound('No user found with that key (%s)' %
+                                  urllib.quote(user_key))
   if request.method != 'POST':
     nickname = account.nickname
     default_context = account.default_context
@@ -3442,17 +3495,23 @@ def settings(request):
                                  'column_width': default_column_width,
                                  'notify_by_email': account.notify_by_email,
                                  })
-    return respond(request, 'settings.html', {'form': form})
+    return respond(request, 'settings.html', {'form': form, 'user_key': user_key})
   form = SettingsForm(request.POST)
+  form.skip_nickname_uniq = (request.user_is_admin and user_key)
   if form.is_valid():
     account.nickname = form.cleaned_data.get('nickname')
     account.default_context = form.cleaned_data.get('context')
     account.default_column_width = form.cleaned_data.get('column_width')
     account.notify_by_email = form.cleaned_data.get('notify_by_email')
     account.fresh = False
+    logging.info('validated: %s' % form.cleaned_data.get('validated'))
+    logging.info('user_is_admin: %s' % request.user_is_admin)
+    if request.user_is_admin:
+      account.validated = form.cleaned_data.get('validated')
     account.put()
   else:
-    return respond(request, 'settings.html', {'form': form})
+    return respond(request, 'settings.html',
+                   {'user_key': user_key, 'form': form})
   return HttpResponseRedirect(reverse(mine))
 
 

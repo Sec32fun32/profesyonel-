@@ -1,4 +1,4 @@
-application: codereview-hr
+application: b2ck-rietveld-hrd
 version: use-version-arg
 runtime: python27
 api_version: 1

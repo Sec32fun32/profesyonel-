@@ -6,7 +6,11 @@
 <p>You can change your nickname.  This affects how your name is
 displayed to other users.</p>
 
+{%if user_key%}
+<form action="{%url codereview.views.settings user_key%}" method="post">
+{%else%}
 <form action="{%url codereview.views.settings%}" method="post">
+{%endif%}
 <input type="hidden" name="xsrf_token" value="{{xsrf_token}}">
 <table class="formtable">
 {{form}}

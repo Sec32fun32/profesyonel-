@@ -181,6 +181,19 @@ def login_required(func):
   return login_wrapper
 
 
+def account_validated(func):
+  """Decorator that check if account is validated."""
+
+  @login_required
+  def account_wrapper(request, *args, **kwds):
+    account = models.Account.current_user_account
+    if not account.validated and not request.user_is_admin:
+      return HttpResponse('Account not yet validated', status=403)
+    return func(request, *args, **kwds)
+
+  return account_wrapper
+
+
 def patch_filename_required(func):
   """Decorator that processes the patch_id argument."""
 

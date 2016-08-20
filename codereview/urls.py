@@ -80,6 +80,7 @@ urlpatterns = patterns(
     (r'^branch_edit/(\d+)$', 'branch_edit'),
     (r'^branch_delete/(\d+)$', 'branch_delete'),
     (r'^settings$', 'settings'),
+    (r'^settings/(.+)$', 'settings'),
     (r'^account_delete$', 'account_delete'),
     (r'^migrate_entities$', 'migrate_entities'),
     (r'^user_popup/(.+)$', 'user_popup'),

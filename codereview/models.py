@@ -28,6 +28,9 @@ import time
 from google.appengine.api import memcache
 from google.appengine.api import urlfetch
 from google.appengine.api.users import User
+from google.appengine.api import mail
+from google.appengine.api.app_identity import get_default_version_hostname, \
+  get_application_id
 from google.appengine.ext import db
 from google.appengine.ext import ndb
 
@@ -64,7 +67,7 @@ class Issue(ndb.Model):
   reviewers = ndb.StringProperty(repeated=True)
   cc = ndb.StringProperty(repeated=True)
   closed = ndb.BooleanProperty(default=False)
-  private = ndb.BooleanProperty(default=False)
+  private = ndb.BooleanProperty(default=True)
   n_comments = ndb.IntegerProperty()
 
   # NOTE: Use num_messages instead of using n_messages_sent directly.
@@ -82,6 +85,10 @@ class Issue(ndb.Model):
   _is_starred = None
   _has_updates_for_current_user = None
   _original_subject = None
+
+  def put(self):
+    self.private = True
+    super(Issue, self).put()
 
   @property
   def is_starred(self):
@@ -1019,6 +1026,19 @@ class Account(ndb.Model):
   lower_email = ndb.ComputedProperty(lambda self: self.email.lower())
   lower_nickname = ndb.ComputedProperty(lambda self: self.nickname.lower())
   xsrf_secret = ndb.BlobProperty()
+  validated = ndb.BooleanProperty(default=False)
+
+  def put(self):
+    saved = self.key and self.key.id()
+    super(Account, self).put()
+    if not saved:
+      user = auth_utils.get_current_user()
+      body = (u"Account '%s' is pending - you can modify it from\n"
+              "http://%s/settings/%s"%
+              (user.email(), get_default_version_hostname(), user.email()))
+      email = 'noreply@%s.appspotmail.com' % get_application_id()
+      mail.send_mail_to_admins(email, 'New pending account',
+                               body)
 
   @classmethod
   def get_id_for_email(cls, email):

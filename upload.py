@@ -663,7 +663,7 @@ group.add_option("--cc", action="store", dest="cc",
                  metavar="CC", default=None,
                  help="Add CC (comma separated email addresses).")
 group.add_option("--private", action="store_true", dest="private",
-                 default=False,
+                 default=True,
                  help="Make the issue restricted to reviewers and those CCed")
 # Upload options
 group = parser.add_option_group("Patch options")

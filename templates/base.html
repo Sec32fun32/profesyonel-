@@ -170,7 +170,7 @@ var publish_link = "{%url codereview.views.publish issue.key.id%}";
 {%if is_dev%}
 <div style="float:left; color:green; font-weight:bold">DEVELOPMENT SERVER</div>
 {%else%}
-<div style="float:left; font-weight:bold"><i>Rietveld</i> Code Review Tool</div>
+<div style="float:left; font-weight:bold">B<span style="top: 0.2em;position:relative;">2</span>CK's Code Review Tool</div>
 {%endif%}
 {%if special_banner%}
 <div style="float:left;
@@ -217,7 +217,6 @@ var publish_link = "{%url codereview.views.publish issue.key.id%}";
 <div class="mainmenu">
   {%block mainmenu%}
   <a href="{%url codereview.views.index %}">Issues</a>
-  <a href="{%url codereview.views.repos %}">Repositories</a>
   <a href="{%url codereview.views.search%}">Search</a>
   {%endblock%}
 </div>
@@ -261,7 +260,7 @@ var publish_link = "{%url codereview.views.publish issue.key.id%}";
 {%if not is_dev%}
 <script type="text/javascript">
   var _gaq = _gaq || [];
-  _gaq.push(['_setAccount', 'UA-4803694-4']);
+  _gaq.push(['_setAccount', 'UA-4361350-3']);
   _gaq.push(['_trackPageview']);
 
   (function() {

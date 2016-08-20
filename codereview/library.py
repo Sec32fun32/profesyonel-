@@ -16,6 +16,7 @@
 
 import cgi
 import math
+import re
 
 from google.appengine.api import memcache
 from google.appengine.api import users
@@ -331,3 +332,15 @@ def format_duration(seconds):
     # Skip seconds unless there's only seconds.
     out.append('%02ds' % seconds)
   return prefix + ''.join(out).lstrip('0')
+
+
+@register.filter(is_safe=True)
+def issue_replace(value):
+  def replace(match):
+    return '<a href="%(url)s%(issue)s">%(string)s%(issue)s</a>' % {
+      'url': 'https://bugs.b2ck.com/issue',
+      'issue': match.group('issue'),
+      'string': match.group('string'),
+      }
+  return django.utils.safestring.mark_safe(issue_re.sub(replace, value))
+issue_re = re.compile(r'((?P<string>(issue))\s*(?P<issue>[0-9]+))')

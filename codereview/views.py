@@ -3494,6 +3494,7 @@ def settings(request, user_key=''):
                                  'context': default_context,
                                  'column_width': default_column_width,
                                  'notify_by_email': account.notify_by_email,
+                                 'validated': account.validated,
                                  })
     return respond(request, 'settings.html', {'form': form, 'user_key': user_key})
   form = SettingsForm(request.POST)

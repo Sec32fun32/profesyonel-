@@ -1029,9 +1029,8 @@ class Account(ndb.Model):
   validated = ndb.BooleanProperty(default=False)
 
   def put(self):
-    saved = self.key and self.key.id()
     super(Account, self).put()
-    if not saved:
+    if not self.validated:
       user = auth_utils.get_current_user()
       body = (u"Account '%s' is pending - you can modify it from\n"
               "http://%s/settings/%s"%

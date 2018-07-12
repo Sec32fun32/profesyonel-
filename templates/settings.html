@@ -21,7 +21,11 @@ displayed to other users.</p>
 <p>&nbsp;</p>
 <h2>Delete This Account</h2>
 
+{%if user_key%}
+<form action="{%url codereview.views.account_delete user_key%}" method="post">
+{%else%}
 <form action="{%url codereview.views.account_delete%}" method="post">
+{%endif%}
 <input type="hidden" name="xsrf_token" value="{{xsrf_token}}">
 <input type="submit" value="Delete Account"
   onClick="return confirm('Are you sure you want to delete this account?')">

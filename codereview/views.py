@@ -3476,7 +3476,10 @@ def branch_delete(request, branch_id):
 @deco.xsrf_required
 def settings(request, user_key=''):
   account = models.Account.current_user_account
-  if request.user_is_admin and user_key:
+  if user_key:
+    if not request.user_is_admin:
+      return HttpTextResponse(
+        'You must be admin in for this function', status=403)
     if '@' in user_key:
       user = users.User(user_key)
       account = models.Account.get_account_for_user(user)
@@ -3519,8 +3522,18 @@ def settings(request, user_key=''):
 @deco.require_methods('POST')
 @deco.login_required
 @deco.xsrf_required
-def account_delete(_request):
+def account_delete(_request, user_key=''):
   account = models.Account.current_user_account
+  if request.user_is_admin and user_key:
+    if '@' in user_key:
+      user = users.User(user_key)
+      account = models.Account.get_account_for_user(user)
+    elif user_key:
+      account = models.Account.get_account_for_nickname(user_key)
+    if not account:
+      logging.info("account not found for user %s" % user_key)
+      return HttpResponseNotFound('No user found with that key (%s)' %
+                                  urllib.quote(user_key))
   account.key.delete()
   return HttpResponseRedirect(users.create_logout_url(reverse(index)))
 

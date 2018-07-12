@@ -82,6 +82,7 @@ urlpatterns = patterns(
     (r'^settings$', 'settings'),
     (r'^settings/(.+)$', 'settings'),
     (r'^account_delete$', 'account_delete'),
+    (r'^account_delete/(.+)$', 'account_delete'),
     (r'^migrate_entities$', 'migrate_entities'),
     (r'^user_popup/(.+)$', 'user_popup'),
     (r'^(\d+)/patchset/(\d+)$', 'patchset'),
